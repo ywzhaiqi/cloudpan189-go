@@ -1,6 +1,9 @@
 # 关于
 天翼云盘CLI，基于GO语言实现。仿 Linux shell 文件处理命令的天翼云盘命令行客户端。
 
+# 修改说明
+- Add `ls XXX -json` 输出 json 字符串
+
 # 特色
 1. 多平台支持, 支持 Windows, macOS, linux, android, iOS等
 2. 天翼云盘多用户支持

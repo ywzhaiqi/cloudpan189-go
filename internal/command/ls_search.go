@@ -14,6 +14,7 @@
 package command
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/olekukonko/tablewriter"
 	"github.com/tickstep/cloudpan189-api/cloudpan"
@@ -78,6 +79,7 @@ func CmdLs() cli.Command {
 			var (
 				orderBy   cloudpan.OrderBy   = cloudpan.OrderByName
 				orderSort cloudpan.OrderSort = cloudpan.OrderAsc
+				outJson   bool               = false
 			)
 
 			switch {
@@ -100,9 +102,13 @@ func CmdLs() cli.Command {
 				orderBy = cloudpan.OrderByTime
 			}
 
+			if c.IsSet("json") {
+				outJson = true
+			}
+
 			RunLs(parseFamilyId(c), c.Args().Get(0), &LsOptions{
 				Total: c.Bool("l") || c.Parent().Args().Get(0) == "ll",
-			}, orderBy, orderSort)
+			}, orderBy, orderSort, outJson)
 
 			return nil
 		},
@@ -136,11 +142,15 @@ func CmdLs() cli.Command {
 				Usage: "家庭云ID",
 				Value: "",
 			},
+			cli.BoolFlag{
+				Name:  "json",
+				Usage: "输出json字符串",
+			},
 		},
 	}
 }
 
-func RunLs(familyId int64, targetPath string, lsOptions *LsOptions, orderBy cloudpan.OrderBy, orderSort cloudpan.OrderSort)  {
+func RunLs(familyId int64, targetPath string, lsOptions *LsOptions, orderBy cloudpan.OrderBy, orderSort cloudpan.OrderSort, outJson bool) {
 	activeUser := config.Config.ActiveUser()
 	targetPath = activeUser.PathJoin(familyId, targetPath)
 	if targetPath[len(targetPath) - 1] == '/' {
@@ -183,9 +193,17 @@ func RunLs(familyId int64, targetPath string, lsOptions *LsOptions, orderBy clou
 	} else {
 		fileList = append(fileList, targetPathInfo)
 	}
-	renderTable(opLs, lsOptions.Total, targetPath, fileList)
-}
 
+	if outJson {
+		res, err := json.Marshal(fileList)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(string(res))
+	} else {
+		renderTable(opLs, lsOptions.Total, targetPath, fileList)
+	}
+}
 
 func renderTable(op int, isTotal bool, path string, files cloudpan.AppFileList) {
 	tb := cmdtable.NewTable(os.Stdout)
